@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FileText, CheckCircle, Clock, MapPin, Bell, LogOut, Settings, User, Menu } from 'lucide-react';
 import './StudentDashboard.css';
 
@@ -21,7 +22,9 @@ interface Application {
 }
 
 export default function StudentDashboard() {
+  const router = useRouter();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<ApplicationStats | null>(null);
   const [applications, setApplications] = useState<Application[]>([
     {
       id: 1,
@@ -89,6 +92,39 @@ export default function StudentDashboard() {
     alert(`Application ${id} - More details opening soon!`);
   };
 
+  const handleStatClick = (stat: ApplicationStats) => {
+    if (stat.title === 'AVAILABLE COLLEGES') {
+      router.push('/Colleges');
+      return;
+    }
+    setSelectedStat(stat);
+  };
+
+  const getStatPillStyle = (title: string) => {
+    switch (title) {
+      case 'ACCEPTED':
+        return 'bg-linear-to-r from-emerald-400 to-green-500 text-white';
+      case 'UNDER REVIEW':
+        return 'bg-yellow-300 text-gray-900';
+      case 'AVAILABLE COLLEGES':
+        return 'bg-cyan-100 text-cyan-700';
+      default:
+        return 'bg-gray-200 text-gray-700';
+    }
+  };
+
+  const getHighlightedApplication = (title: string) => {
+    if (title === 'ACCEPTED') {
+      return applications.find((app) => app.status === 'Accepted') ?? null;
+    }
+
+    if (title === 'UNDER REVIEW') {
+      return applications.find((app) => app.status === 'Under Review') ?? null;
+    }
+
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header/Navbar */}
@@ -149,8 +185,8 @@ export default function StudentDashboard() {
                   <hr className="my-2" />
                   <button
                     onClick={() => {
-                      alert('Logging out...');
                       setProfileDropdownOpen(false);
+                      router.push('/');
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition-all duration-200 text-left"
                   >
@@ -223,6 +259,7 @@ export default function StudentDashboard() {
         {stats.map((stat) => (
           <div
             key={stat.id}
+            onClick={() => handleStatClick(stat)}
             className={`${stat.bgColor} ${stat.textColor} rounded-2xl p-6 flex items-center justify-between transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer`}
           >
             <div>
@@ -266,12 +303,6 @@ export default function StudentDashboard() {
           ))}
         </div>
 
-        <button
-          onClick={() => alert('View all applications')}
-          className="w-full mt-6 bg-linear-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-semibold py-3 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95"
-        >
-          View All Applications
-        </button>
       </div>
 
       {/* Footer */}
@@ -357,6 +388,73 @@ export default function StudentDashboard() {
         </div>
       </div>
       </div>
+
+      {selectedStat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            {(() => {
+              const highlightedApplication = getHighlightedApplication(selectedStat.title);
+
+              return (
+                <>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+                  Dashboard stat
+                </p>
+                <h3 className="mt-2 text-xl font-bold text-gray-900">{selectedStat.title}</h3>
+                <span
+                  className={`${getStatPillStyle(
+                    selectedStat.title
+                  )} mt-3 inline-flex rounded-full px-4 py-1 text-xs font-semibold`}
+                >
+                  {selectedStat.title === 'TOTAL APPLICATIONS' ? 'Total Applications' : selectedStat.title}
+                </span>
+                {highlightedApplication && (
+                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-sm font-semibold text-gray-900">{highlightedApplication.universityName}</p>
+                    <p className="mt-1 text-xs text-gray-600">{highlightedApplication.program}</p>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedStat(null)}
+                className="rounded-full px-2 py-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mt-4 text-sm text-gray-600">
+              You currently have <span className="font-semibold text-gray-900">{selectedStat.count}</span>{' '}
+              item(s) in this category. Data details will be connected once Supabase is ready.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedStat(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              >
+                Close
+              </button>
+              {selectedStat.title === 'AVAILABLE COLLEGES' && (
+                <button
+                  onClick={() => {
+                    setSelectedStat(null);
+                    router.push('/Colleges');
+                  }}
+                  className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-600"
+                >
+                  Go to Colleges
+                </button>
+              )}
+            </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

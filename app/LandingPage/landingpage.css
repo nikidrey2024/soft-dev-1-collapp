@@ -328,17 +328,24 @@
   position: relative;
 }
 
+.password-field input {
+  padding-right: 4.5rem;
+}
+
 .password-toggle {
   position: absolute;
   right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 0.95rem;
   border: none;
   background: transparent;
   color: #2563eb;
   font-weight: 700;
   cursor: pointer;
   padding: 0;
+  line-height: 1;
+  min-height: 1.2rem;
+  display: inline-flex;
+  align-items: center;
 }
 
 .password-toggle:hover {

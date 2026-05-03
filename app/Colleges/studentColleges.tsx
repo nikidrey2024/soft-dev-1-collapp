@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Menu, Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Menu, Bell, LogOut, Settings, User } from 'lucide-react';
 
 interface College {
   id: number;
@@ -15,6 +16,8 @@ interface College {
 }
 
 export default function StudentColleges() {
+  const router = useRouter();
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [colleges, setColleges] = useState<College[]>([
     {
       id: 1,
@@ -106,14 +109,60 @@ export default function StudentColleges() {
           {/* Left - Menu and Logo */}
           <div className="flex items-center gap-6">
             <Menu size={24} className="text-gray-900 cursor-pointer" />
-            <span className="text-xl font-bold text-gray-900">COLLAPP</span>
+            <button
+              onClick={() => router.push('/StudentDashboard')}
+              className="text-xl font-bold text-gray-900 hover:text-gray-700 transition"
+            >
+              COLLAPP
+            </button>
           </div>
 
           {/* Right - Notification and Profile */}
           <div className="flex items-center gap-6">
             <Bell size={24} className="text-gray-900 cursor-pointer hover:text-gray-600 transition" />
-            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition">
-              <span className="text-white font-bold text-sm">J</span>
+            <div className="relative">
+              <button
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition"
+              >
+                <span className="text-white font-bold text-sm">J</span>
+              </button>
+
+              {profileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 animate-in fade-in duration-200">
+                  <button
+                    onClick={() => {
+                      alert('Viewing profile...');
+                      setProfileDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition-all duration-200 text-left"
+                  >
+                    <User size={18} className="text-gray-600" />
+                    <span className="text-gray-900">View Profile</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert('Opening settings...');
+                      setProfileDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition-all duration-200 text-left"
+                  >
+                    <Settings size={18} className="text-gray-600" />
+                    <span className="text-gray-900">Settings</span>
+                  </button>
+                  <hr className="my-2" />
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      router.push('/');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition-all duration-200 text-left"
+                  >
+                    <LogOut size={18} className="text-red-600" />
+                    <span className="text-red-600">Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

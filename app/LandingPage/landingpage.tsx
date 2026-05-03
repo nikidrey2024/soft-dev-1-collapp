@@ -6,7 +6,7 @@ import './landingpage.css';
 
 const accounts: Record<string, { password: string; route: string }> = {
   student: { password: '12345', route: '/StudentDashboard' },
-  school1: { password: '12345', route: '/schoolrep' },
+  school1: { password: '12345', route: '/SchoolRepDashboarrd' },
 };
 
 export default function LandingPage() {
