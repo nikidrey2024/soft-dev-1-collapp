@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Menu, Bell, LogOut, Settings, User } from 'lucide-react';
 
@@ -24,6 +24,7 @@ export default function StudentColleges() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFilesByCollege, setSelectedFilesByCollege] = useState<Record<number, File[]>>({});
 
   // Fetch colleges on component mount
   useEffect(() => {
@@ -51,15 +52,26 @@ export default function StudentColleges() {
     return 'bg-cyan-400 hover:bg-cyan-500 text-white';
   };
 
+  const handleFileChange = (collegeId: number, event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setSelectedFilesByCollege((prev) => ({
+      ...prev,
+      [collegeId]: files,
+    }));
+  };
+
   const handleApply = async (college: College) => {
     try {
       // Create application via API
+      const selectedFiles = selectedFilesByCollege[college.id] || [];
+
       const applicationData = {
         studentId: 1, // In a real app, this would come from authentication
         studentName: 'Juan dela Cruz',
         collegeId: college.id,
         collegeName: college.name,
         program: 'General Application', // Could be made dynamic
+        documents: selectedFiles.map((file) => file.name),
       };
 
       const response = await fetch('/server/applications', {
@@ -75,7 +87,10 @@ export default function StudentColleges() {
       }
 
       alert(`Application submitted to ${college.name}!`);
-      // Optionally refresh the page or update state
+      setSelectedFilesByCollege((prev) => ({
+        ...prev,
+        [college.id]: [],
+      }));
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('Failed to submit application. Please try again.');
@@ -233,6 +248,22 @@ export default function StudentColleges() {
                     </div>
                   </div>
                 )}
+
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                  <p className="text-xs font-bold text-gray-900 mb-2">UPLOAD DOCUMENTS</p>
+                  <input
+                    id={`documents-${college.id}`}
+                    type="file"
+                    multiple
+                    onChange={(event) => handleFileChange(college.id, event)}
+                    className="block w-full text-xs text-gray-700 file:mr-4 file:rounded-full file:border-0 file:bg-cyan-100 file:px-4 file:py-2 file:font-semibold file:text-cyan-700 hover:file:bg-cyan-200"
+                  />
+                  {selectedFilesByCollege[college.id] && selectedFilesByCollege[college.id].length > 0 && (
+                    <p className="mt-2 text-xs text-gray-600">
+                      Selected: {selectedFilesByCollege[college.id].map((file) => file.name).join(', ')}
+                    </p>
+                  )}
+                </div>
 
                 {/* Deadline and Action Button */}
                 <div className="flex justify-between items-center">

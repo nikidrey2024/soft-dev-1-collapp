@@ -749,6 +749,19 @@ export default function SchoolRepPage() {
               <p className="mt-1 font-semibold text-slate-900">{selectedApplicant.program}</p>
             </div>
 
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm text-slate-600">Submitted documents</p>
+              {selectedApplicant.documents && selectedApplicant.documents.length > 0 ? (
+                <ul className="mt-2 list-disc pl-5 text-sm text-slate-800 space-y-1">
+                  {selectedApplicant.documents.map((documentName, index) => (
+                    <li key={`${selectedApplicant.id}-${documentName}-${index}`}>{documentName}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">No documents uploaded.</p>
+              )}
+            </div>
+
             <div className="mt-4 flex items-center gap-2">
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
