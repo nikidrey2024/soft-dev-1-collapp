@@ -1,10 +1,5 @@
-'use client';
+import SchoolRepPage from './schoolrep';
 
-export default function SchoolRepPage() {
-  return (
-    <div>
-      <h1>School Rep Dashboard</h1>
-      <p>Welcome to the School Representative dashboard</p>
-    </div>
-  );
+export default function Page() {
+  return <SchoolRepPage />;
 }
