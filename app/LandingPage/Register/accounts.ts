@@ -1,10 +1,13 @@
 'use client';
 
+import type { Route } from 'next';
+
 type AccountType = 'student' | 'schoolRep';
+type AccountRoute = Route<'/schoolrep' | '/StudentDashboard'>;
 
 export type Account = {
   password: string;
-  route: string;
+  route: AccountRoute;
   type: AccountType;
   fullName?: string;
   email?: string;
@@ -22,13 +25,33 @@ const defaultAccounts: Record<string, Account> = {
   },
 };
 
+function normalizeAccountRoute(route: string, type: AccountType): AccountRoute | null {
+  const normalizedRoute = route.trim().toLowerCase();
+
+  if (type === 'schoolRep') {
+    return normalizedRoute === '/schoolrep' ? '/schoolrep' : null;
+  }
+
+  if (normalizedRoute === '/studentdashboard') {
+    return '/StudentDashboard';
+  }
+
+  return null;
+}
+
 function isAccountValue(value: unknown): value is Account {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const account = value as Partial<Account>;
+  const type = account.type;
+
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Account).password === 'string' &&
-    typeof (value as Account).route === 'string' &&
-    ((value as Account).type === 'student' || (value as Account).type === 'schoolRep')
+    typeof account.password === 'string' &&
+    typeof account.route === 'string' &&
+    (type === 'student' || type === 'schoolRep') &&
+    normalizeAccountRoute(account.route, type) !== null
   );
 }
 
@@ -53,7 +76,13 @@ export function loadAccounts(): Record<string, Account> {
     for (const key of Object.keys(parsed)) {
       const value = (parsed as Record<string, unknown>)[key];
       if (isAccountValue(value)) {
-        merged[key] = value;
+        const normalizedRoute = normalizeAccountRoute(value.route, value.type);
+        if (normalizedRoute) {
+          merged[key] = {
+            ...value,
+            route: normalizedRoute,
+          };
+        }
       }
     }
 
