@@ -6,13 +6,11 @@ type CollegeEmbed = {
   name: string;
   description?: string;
   location?: string;
-  logo_url?: string | null;
 } | {
   id?: number;
   name: string;
   description?: string;
   location?: string;
-  logo_url?: string | null;
 }[] | null;
 
 function collegeFromEmbed(embed: CollegeEmbed | undefined) {
@@ -42,10 +40,7 @@ export async function GET() {
         full_name,
         role,
         college_id,
-        description,
-        address,
-        avatar_url,
-        colleges ( id, name, description, location, logo_url )
+        colleges ( id, name, description, location )
       `
       )
       .eq('id', user.id)
@@ -65,9 +60,6 @@ export async function GET() {
       full_name: string;
       role: string;
       college_id: number | null;
-      description: string;
-      address: string;
-      avatar_url: string | null;
       colleges?: CollegeEmbed;
     };
 
@@ -80,12 +72,12 @@ export async function GET() {
       role: row.role,
       collegeId: row.college_id,
       collegeName: college?.name ?? null,
-      description: row.description ?? '',
-      address: row.address ?? '',
-      avatarUrl: row.avatar_url,
+      description: '',
+      address: '',
+      avatarUrl: null,
       collegeDescription: college?.description ?? '',
       collegeAddress: college?.location ?? '',
-      collegeLogoUrl: college?.logo_url ?? null,
+      collegeLogoUrl: null,
       email: user.email ?? '',
     });
   } catch (e) {
