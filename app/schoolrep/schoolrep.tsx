@@ -70,6 +70,8 @@ export default function SchoolRepPage() {
   const [error, setError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [repCollegeName, setRepCollegeName] = useState<string | null>(null);
+  const [reviewComment, setReviewComment] = useState('');
+  const [selectedDocumentUrl, setSelectedDocumentUrl] = useState<string | null>(null);
 
   const pendingCount = applicants.filter((applicant) => applicant.status === 'Pending' || applicant.status === 'Under Review').length;
   const pendingApplicants = applicants.filter((applicant) => applicant.status === 'Pending' || applicant.status === 'Under Review');
@@ -93,7 +95,19 @@ export default function SchoolRepPage() {
   const selectedApplicant =
     applicants.find((applicant) => applicant.id === selectedApplicantId) ?? null;
 
-  const updateStatus = async (id: number, status: 'Accepted' | 'Pending' | 'Rejected') => {
+  useEffect(() => {
+    if (!selectedApplicant) {
+      setReviewComment('');
+      setSelectedDocumentUrl(null);
+      return;
+    }
+
+    setReviewComment(selectedApplicant.notes ?? '');
+    const firstDocumentWithUrl = selectedApplicant.documents?.find((document) => Boolean(document.url));
+    setSelectedDocumentUrl(firstDocumentWithUrl?.url ?? null);
+  }, [selectedApplicant]);
+
+  const updateStatus = async (id: number, status: 'Accepted' | 'Pending' | 'Rejected' | 'Under Review') => {
     try {
       const response = await fetch(`/server/applications?id=${id}`, {
         method: 'PUT',
@@ -355,6 +369,38 @@ export default function SchoolRepPage() {
   const declineApplicant = async (id: number) => {
     await updateStatus(id, 'Rejected');
     setSelectedApplicantId(null);
+  };
+
+  const markUnderReview = async (id: number) => {
+    await updateStatus(id, 'Under Review');
+  };
+
+  const saveReviewComment = async (id: number) => {
+    try {
+      const response = await fetch(`/server/applications?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: reviewComment }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save comment');
+
+      const updatedApplication: Applicant = await response.json();
+      const mappedApplication = {
+        ...updatedApplication,
+        initials: updatedApplication.studentName.split(' ').map((n) => n[0]).join('').toUpperCase(),
+      };
+
+      setApplicants((prev) =>
+        prev.map((applicant) => (applicant.id === id ? mappedApplication : applicant))
+      );
+      setDeclinedApplicants((prev) =>
+        prev.map((applicant) => (applicant.id === id ? mappedApplication : applicant))
+      );
+    } catch (err) {
+      console.error('Error saving review comment:', err);
+      alert(err instanceof Error ? err.message : 'Could not save comment');
+    }
   };
 
   const restoreApplicant = async (id: number) => {
@@ -819,9 +865,13 @@ export default function SchoolRepPage() {
                   {selectedApplicant.documents.map((documentName, index) => (
                     <li key={`${selectedApplicant.id}-${documentName.name}-${index}`}>
                       {documentName.url ? (
-                        <a href={documentName.url} target="_blank" rel="noopener noreferrer" className="underline text-black">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDocumentUrl(documentName.url ?? null)}
+                          className="underline text-black"
+                        >
                           {documentName.name}
-                        </a>
+                        </button>
                       ) : (
                         documentName.name
                       )}
@@ -831,6 +881,35 @@ export default function SchoolRepPage() {
               ) : (
                 <p className="mt-1 text-sm text-slate-500">No documents uploaded.</p>
               )}
+            </div>
+
+            {selectedDocumentUrl && (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-600">Document preview</p>
+                <iframe
+                  title="Applicant document preview"
+                  src={selectedDocumentUrl}
+                  className="mt-3 h-72 w-full rounded-xl border border-slate-300 bg-white"
+                />
+              </div>
+            )}
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <label className="text-sm text-slate-600" htmlFor="review-comment">Application comment</label>
+              <textarea
+                id="review-comment"
+                value={reviewComment}
+                onChange={(event) => setReviewComment(event.target.value)}
+                placeholder="Add feedback for the student."
+                className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                rows={4}
+              />
+              <button
+                onClick={() => saveReviewComment(selectedApplicant.id)}
+                className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Save Comment
+              </button>
             </div>
 
             <div className="mt-4 flex items-center gap-2">
@@ -854,6 +933,22 @@ export default function SchoolRepPage() {
               >
                 Close
               </button>
+              {selectedApplicant.status !== 'Accepted' && selectedApplicant.status !== 'Rejected' && (
+                <button
+                  onClick={() => markUnderReview(selectedApplicant.id)}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Put Under Review
+                </button>
+              )}
+              {selectedApplicant.status !== 'Rejected' && (
+                <button
+                  onClick={() => updateStatus(selectedApplicant.id, 'Pending')}
+                  className="rounded-lg bg-slate-600 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                >
+                  Send Back to Student
+                </button>
+              )}
               {selectedApplicant.status !== 'Accepted' && selectedApplicant.status !== 'Rejected' && (
                 <button
                   onClick={() => declineApplicant(selectedApplicant.id)}
