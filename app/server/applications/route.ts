@@ -17,12 +17,31 @@ interface ApplicationRow {
   notes: string | null;
 }
 
+
+function normalizeDocuments(input: unknown) {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .map((item) => {
+      if (typeof item === 'string') {
+        return { name: item, url: null as string | null };
+      }
+
+      if (item && typeof item === 'object') {
+        const candidate = item as { name?: unknown; url?: unknown };
+        const name = typeof candidate.name === 'string' ? candidate.name : '';
+        if (!name) return null;
+        const url = typeof candidate.url === 'string' ? candidate.url : null;
+        return { name, url };
+      }
+
+      return null;
+    })
+    .filter((value): value is { name: string; url: string | null } => value !== null);
+}
+
 function mapApplication(row: ApplicationRow) {
-  const docs = Array.isArray(row.documents)
-    ? (row.documents as string[])
-    : typeof row.documents === 'string'
-      ? [row.documents]
-      : [];
+  const docs = normalizeDocuments(row.documents);
 
   return {
     id: row.id,
@@ -86,8 +105,22 @@ export async function GET(request: NextRequest) {
 
     if (profile.role === 'student') {
       query = query.eq('student_id', user.id);
-    } else if (profile.role === 'school_rep' && studentId) {
-      query = query.eq('student_id', studentId);
+    } else if (profile.role === 'school_rep') {
+      const { data: repProfile, error: repProfileError } = await supabase
+        .from('profiles')
+        .select('college_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (repProfileError || !repProfile || repProfile.college_id == null) {
+        return NextResponse.json({ error: 'School representative profile is missing college scope' }, { status: 403 });
+      }
+
+      query = query.eq('college_id', repProfile.college_id);
+
+      if (studentId) {
+        query = query.eq('student_id', studentId);
+      }
     }
 
     const { data: rows, error } = await query;

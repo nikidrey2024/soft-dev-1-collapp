@@ -237,7 +237,7 @@ export default function StudentColleges() {
           <p className="text-red-600 mb-4">Error loading colleges: {error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
           >
             Retry
           </button>
@@ -420,7 +420,7 @@ export default function StudentColleges() {
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <span className="text-xs font-medium text-gray-600">{college.status}</span>
                     {existingApp ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">
                         <CheckCircle className="size-3.5" aria-hidden />
                         Applied
                       </span>
@@ -449,17 +449,17 @@ export default function StudentColleges() {
                 )}
 
                 {existingApp ? (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
+                  <div className="rounded-xl border border-gray-300 bg-gray-100 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-black">
                       Application on file
                     </p>
-                    <p className="mt-1 text-sm text-emerald-950">
+                    <p className="mt-1 text-sm text-black">
                       Status: <span className="font-semibold">{existingApp.status}</span>
                     </p>
-                    <p className="mt-0.5 text-xs text-emerald-800">
+                    <p className="mt-0.5 text-xs text-gray-700">
                       Program: {existingApp.program}
                     </p>
-                    <p className="mt-0.5 text-xs text-emerald-700">
+                    <p className="mt-0.5 text-xs text-gray-600">
                       Submitted {new Date(existingApp.appliedDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                     </p>
                   </div>
@@ -476,14 +476,14 @@ export default function StudentColleges() {
                         multiple
                         onChange={(event) => handleFileChange(college.id, event)}
                         disabled={applySubmittingId === college.id}
-                        className="block w-full text-xs text-gray-700 file:mr-4 file:rounded-full file:border-0 file:bg-cyan-100 file:px-4 file:py-2 file:font-semibold file:text-cyan-700 hover:file:bg-cyan-200 disabled:opacity-50"
+                        className="block w-full text-xs text-gray-700 file:mr-4 file:rounded-full file:border-0 file:bg-gray-200 file:px-4 file:py-2 file:font-semibold file:text-black hover:file:bg-gray-300 disabled:opacity-50"
                       />
                       {fileCount > 0 ? (
                         <p className="mt-2 text-xs text-gray-600">
                           Selected: {selectedFilesByCollege[college.id]!.map((file) => file.name).join(', ')}
                         </p>
                       ) : (
-                        <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1.5 inline-block">
+                        <p className="mt-2 text-xs text-black bg-gray-200 border border-gray-300 rounded-lg px-2 py-1.5 inline-block">
                           No files selected yet — Apply stays disabled until you add at least one.
                         </p>
                       )}

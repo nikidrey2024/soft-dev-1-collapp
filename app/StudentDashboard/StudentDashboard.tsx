@@ -161,7 +161,7 @@ export default function StudentDashboard() {
       title: 'ACCEPTED',
       count: acceptedApplications,
       icon: <CheckCircle size={40} className="text-white" strokeWidth={1.5} />,
-      bgColor: 'bg-linear-to-r from-emerald-400 to-green-500',
+      bgColor: 'bg-linear-to-r from-gray-700 to-black',
       textColor: 'text-white',
     },
     {
@@ -169,7 +169,7 @@ export default function StudentDashboard() {
       title: 'UNDER REVIEW',
       count: underReviewApplications,
       icon: <Clock size={40} className="text-gray-900" strokeWidth={1.5} />,
-      bgColor: 'bg-yellow-300',
+      bgColor: 'bg-gray-300',
       textColor: 'text-gray-900',
     },
     {
@@ -185,13 +185,13 @@ export default function StudentDashboard() {
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'Accepted':
-        return 'bg-linear-to-r from-emerald-400 to-green-500 text-white';
+        return 'bg-linear-to-r from-gray-700 to-black text-white';
       case 'Under Review':
-        return 'bg-yellow-300 text-gray-900';
+        return 'bg-gray-300 text-gray-900';
       case 'Pending':
         return 'bg-gray-300 text-gray-900';
       case 'Rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-gray-400 text-black';
       default:
         return 'bg-gray-200 text-gray-900';
     }
@@ -212,11 +212,11 @@ export default function StudentDashboard() {
   const getStatPillStyle = (title: string) => {
     switch (title) {
       case 'ACCEPTED':
-        return 'bg-linear-to-r from-emerald-400 to-green-500 text-white';
+        return 'bg-linear-to-r from-gray-700 to-black text-white';
       case 'UNDER REVIEW':
-        return 'bg-yellow-300 text-gray-900';
+        return 'bg-gray-300 text-gray-900';
       case 'AVAILABLE COLLEGES':
-        return 'bg-cyan-100 text-cyan-700';
+        return 'bg-gray-300 text-black';
       default:
         return 'bg-gray-200 text-gray-700';
     }
@@ -252,7 +252,7 @@ export default function StudentDashboard() {
           <p className="text-red-600 mb-4">Error loading dashboard: {error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
           >
             Retry
           </button>

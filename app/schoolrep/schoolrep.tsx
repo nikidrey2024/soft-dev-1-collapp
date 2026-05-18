@@ -16,7 +16,7 @@ interface Applicant {
   status: 'Pending' | 'Under Review' | 'Accepted' | 'Rejected';
   appliedDate: string;
   updatedAt: string;
-  documents?: string[];
+  documents?: { name: string; url?: string | null }[];
   notes?: string;
   initials: string;
 }
@@ -385,7 +385,7 @@ export default function SchoolRepPage() {
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               college.status === 'Available'
-                ? 'bg-emerald-100 text-emerald-700'
+                ? 'bg-gray-300 text-black'
                 : 'bg-slate-200 text-slate-700'
             }`}
           >
@@ -434,7 +434,7 @@ export default function SchoolRepPage() {
             <button className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 transition">
               <Bell size={20} />
               {pendingCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-xs font-semibold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center">
                   {pendingCount}
                 </span>
               )}
@@ -501,7 +501,7 @@ export default function SchoolRepPage() {
               <h2 className="mt-3 text-3xl font-semibold">
                 {repCollegeName ? `${repCollegeName} — Rep dashboard` : 'School Rep dashboard'}
               </h2>
-              <p className="mt-2 max-w-2xl text-slate-200 leading-7">
+              <p className="mt-2 max-w-2xl text-gray-200 leading-7">
                 You only see applications for your campus. Students applying to other schools are hidden by design.
               </p>
             </div>
@@ -554,7 +554,7 @@ export default function SchoolRepPage() {
                       event.stopPropagation();
                       updateStatus(applicant.id, 'Accepted');
                     }}
-                    className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600 transition"
+                    className="rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 transition"
                   >
                     Accept
                   </button>
@@ -563,7 +563,7 @@ export default function SchoolRepPage() {
                       event.stopPropagation();
                       declineApplicant(applicant.id);
                     }}
-                    className="rounded-lg bg-rose-500 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-600 transition"
+                    className="rounded-lg bg-gray-700 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 transition"
                   >
                     Decline
                   </button>
@@ -590,7 +590,7 @@ export default function SchoolRepPage() {
                   value={approvedSearch}
                   onChange={(event) => setApprovedSearch(event.target.value)}
                   placeholder="Search approved applicants"
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-gray-400"
                 />
                 {filteredApprovedApplicants.length === 0 ? (
                   <p className="text-sm text-slate-500">No approved applicants found.</p>
@@ -599,13 +599,13 @@ export default function SchoolRepPage() {
                     <div
                       key={applicant.id}
                       onClick={() => setSelectedApplicantId(applicant.id)}
-                      className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex items-center justify-between gap-3 cursor-pointer hover:shadow-sm transition"
+                      className="rounded-xl border border-gray-300 bg-gray-100 p-3 flex items-center justify-between gap-3 cursor-pointer hover:shadow-sm transition"
                     >
                       <div>
                         <p className="font-semibold text-slate-900">{applicant.studentName}</p>
                         <p className="text-sm text-slate-600">Applied to {applicant.collegeName} for {applicant.program}</p>
                       </div>
-                      <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">
+                      <span className="rounded-full px-3 py-1 text-xs font-semibold bg-gray-300 text-black">
                         {applicant.status}
                       </span>
                     </div>
@@ -817,7 +817,15 @@ export default function SchoolRepPage() {
               {selectedApplicant.documents && selectedApplicant.documents.length > 0 ? (
                 <ul className="mt-2 list-disc pl-5 text-sm text-slate-800 space-y-1">
                   {selectedApplicant.documents.map((documentName, index) => (
-                    <li key={`${selectedApplicant.id}-${documentName}-${index}`}>{documentName}</li>
+                    <li key={`${selectedApplicant.id}-${documentName.name}-${index}`}>
+                      {documentName.url ? (
+                        <a href={documentName.url} target="_blank" rel="noopener noreferrer" className="underline text-black">
+                          {documentName.name}
+                        </a>
+                      ) : (
+                        documentName.name
+                      )}
+                    </li>
                   ))}
                 </ul>
               ) : (
@@ -829,7 +837,7 @@ export default function SchoolRepPage() {
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
                   selectedApplicant.status === 'Accepted'
-                    ? 'bg-emerald-100 text-emerald-700'
+                    ? 'bg-gray-300 text-black'
                     : selectedApplicant.status === 'Rejected'
                     ? 'bg-rose-100 text-rose-700'
                     : 'bg-yellow-100 text-yellow-800'
@@ -849,7 +857,7 @@ export default function SchoolRepPage() {
               {selectedApplicant.status !== 'Accepted' && selectedApplicant.status !== 'Rejected' && (
                 <button
                   onClick={() => declineApplicant(selectedApplicant.id)}
-                  className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
+                  className="rounded-lg bg-gray-700 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
                 >
                   Decline
                 </button>
@@ -857,7 +865,7 @@ export default function SchoolRepPage() {
               {selectedApplicant.status !== 'Accepted' && (
                 <button
                   onClick={() => updateStatus(selectedApplicant.id, 'Accepted')}
-                  className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+                  className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
                 >
                   Accept
                 </button>
