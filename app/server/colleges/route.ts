@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(mapCollege(data as CollegeRow));
     }
 
-    let query = supabase.from('colleges').select('*').order('id', { ascending: true });
+    const query = supabase.from('colleges').select('*').order('id', { ascending: true });
 
     const { data: rows, error } = await query;
     if (error) {

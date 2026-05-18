@@ -63,7 +63,7 @@ export default function Login({ onSwitchToSignUp }: LoginProps) {
           </button>
 
           <p className="login-panel__footer">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button type="button" className="login-panel__footer-action" onClick={onSwitchToSignUp}>
               Sign up
             </button>

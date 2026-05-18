@@ -56,7 +56,6 @@ export default function SchoolRepPage() {
   const [approvedSearch, setApprovedSearch] = useState('');
   const [declinedSearch, setDeclinedSearch] = useState('');
   const [selectedApplicantId, setSelectedApplicantId] = useState<number | null>(null);
-  const [selectedCollegeId, setSelectedCollegeId] = useState<number | null>(null);
   const [collegeForm, setCollegeForm] = useState<CollegeFormState>({
     id: 0,
     name: '',
@@ -277,7 +276,6 @@ export default function SchoolRepPage() {
       requirements: '',
       contactEmail: '',
     });
-    setSelectedCollegeId(null);
   };
 
   const saveCollege = async () => {
@@ -337,7 +335,6 @@ export default function SchoolRepPage() {
   };
 
   const editCollege = (college: College) => {
-    setSelectedCollegeId(college.id);
 
     const requirements = Array.isArray(college.requirements)
       ? college.requirements.join(', ')
