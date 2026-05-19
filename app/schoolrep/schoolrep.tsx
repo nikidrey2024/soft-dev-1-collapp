@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Bell, LogOut, Settings, User } from 'lucide-react';
+import { Building2, Bell, LogOut, Settings, User, RefreshCw } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import './schoolrep.css';
 
@@ -407,17 +407,47 @@ export default function SchoolRepPage() {
     await updateStatus(id, 'Pending');
   };
 
+
+  const renderDataStateCard = ({
+    title,
+    description,
+    ctaLabel,
+    onCta,
+  }: {
+    title: string;
+    description: string;
+    ctaLabel: string;
+    onCta: () => void;
+  }) => (
+    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Data status</p>
+      <h3 className="mt-3 text-xl font-semibold text-slate-900">{title}</h3>
+      <p className="mt-2 text-sm text-slate-600">{description}</p>
+      <button
+        type="button"
+        onClick={onCta}
+        className="mt-5 inline-flex items-center gap-2 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        <RefreshCw size={14} />
+        {ctaLabel}
+      </button>
+    </div>
+  );
+
   const collegeListContent = loading ? (
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
-      Loading colleges...
+      <div className="space-y-3"><div className="h-5 animate-pulse rounded bg-slate-200" /><div className="h-5 animate-pulse rounded bg-slate-200" /><div className="h-5 animate-pulse rounded bg-slate-200" /></div>
     </div>
   ) : error ? (
-    <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center text-rose-700">
-      {error}
-    </div>
+    renderDataStateCard({
+      title: 'We could not load college records',
+      description: 'Please retry to restore the latest campus settings.',
+      ctaLabel: 'Retry loading colleges',
+      onCta: () => window.location.reload(),
+    })
   ) : colleges.length === 0 ? (
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
-      No colleges found. Add one using the form.
+      No colleges found yet. Add your first college to open applications.
     </div>
   ) : (
     colleges.map((college) => (
@@ -575,7 +605,14 @@ export default function SchoolRepPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
               Pending applicants ({pendingApplicants.length})
             </p>
-            {pendingApplicants.map((applicant) => (
+            {pendingApplicants.length === 0 ? (
+              renderDataStateCard({
+                title: "No pending applicants",
+                description: "New submissions will appear here for review.",
+                ctaLabel: "Review declined list",
+                onCta: () => setShowDeclined(true),
+              })
+            ) : pendingApplicants.map((applicant) => (
               <div
                 key={applicant.id}
                 onClick={() => setSelectedApplicantId(applicant.id)}

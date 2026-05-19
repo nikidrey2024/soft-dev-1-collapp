@@ -154,6 +154,32 @@ export default function StudentColleges() {
     };
   }, [router]);
 
+
+  const renderDataStateCard = ({
+    title,
+    description,
+    ctaLabel,
+    onCta,
+  }: {
+    title: string;
+    description: string;
+    ctaLabel: string;
+    onCta: () => void;
+  }) => (
+    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Data status</p>
+      <h3 className="mt-3 text-xl font-semibold text-slate-900">{title}</h3>
+      <p className="mt-2 text-sm text-slate-600">{description}</p>
+      <button
+        type="button"
+        onClick={onCta}
+        className="mt-5 rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+      >
+        {ctaLabel}
+      </button>
+    </div>
+  );
+
   const getButtonColor = () => {
     return 'bg-cyan-400 hover:bg-cyan-500 text-white';
   };
@@ -221,10 +247,11 @@ export default function StudentColleges() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading colleges...</p>
+      <div className="min-h-screen bg-white p-6 md:p-8">
+        <div className="mx-auto grid max-w-4xl gap-4">
+          <div className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+          <div className="h-48 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+          <div className="h-48 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
         </div>
       </div>
     );
@@ -232,15 +259,14 @@ export default function StudentColleges() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error loading colleges: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-          >
-            Retry
-          </button>
+      <div className="min-h-screen bg-white p-6 md:p-8">
+        <div className="mx-auto max-w-4xl">
+          {renderDataStateCard({
+            title: 'We could not load colleges',
+            description: 'Please retry to fetch the latest college listings.',
+            ctaLabel: 'Retry loading colleges',
+            onCta: () => window.location.reload(),
+          })}
         </div>
       </div>
     );
@@ -386,8 +412,8 @@ export default function StudentColleges() {
           <div className="space-y-4">
             {colleges.length === 0 ? (
               <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
-                <p className="text-base font-semibold text-gray-900">No colleges available</p>
-                <p className="mt-2 text-sm text-gray-600">Check back later or contact support.</p>
+                <p className="text-base font-semibold text-gray-900">No colleges listed yet</p>
+                <p className="mt-2 text-sm text-gray-600">Browse colleges later or return to your dashboard while listings update.</p>
               </div>
             ) : filteredColleges.length === 0 ? (
               <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
