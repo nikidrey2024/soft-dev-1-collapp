@@ -16,6 +16,30 @@ type ProfileData = {
   collegeLogoUrl?: string | null;
 };
 
+type FieldErrors = Partial<Record<'fullName' | 'email' | 'avatarUrl' | 'password' | 'schoolLogoUrl' | 'form', string>>;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const isValidHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const mapProfileServerError = (status: number, message?: string) => {
+  const lower = (message ?? '').toLowerCase();
+  if (status === 401 || lower.includes('unauthorized')) return 'Your session expired. Please sign in again.';
+  if (status === 404 || lower.includes('profile not found')) return 'We could not find your profile. Please contact support.';
+  if (lower.includes('invalid email')) return 'Please enter a valid email address.';
+  if (lower.includes('already') && lower.includes('email')) return 'That email address is already in use.';
+  if (lower.includes('password') && (lower.includes('weak') || lower.includes('least'))) {
+    return 'Password is too weak. Use at least 8 characters with uppercase, lowercase, and a number.';
+  }
+  return 'Unable to save settings right now. Please try again.';
+};
+
 export default function SettingsPage() {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>({});
@@ -23,6 +47,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
     const load = async () => {
@@ -57,26 +82,91 @@ export default function SettingsPage() {
     load();
   }, [router]);
 
+  const focusFirstInvalid = (nextErrors: FieldErrors) => {
+    const order: Array<keyof FieldErrors> = ['fullName', 'email', 'avatarUrl', 'password', 'schoolLogoUrl'];
+    const first = order.find((field) => nextErrors[field]);
+    if (!first) return;
+    const el = document.getElementById(first);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el as HTMLInputElement | null)?.focus();
+  };
+
+  const validate = () => {
+    const nextErrors: FieldErrors = {};
+    const normalizedEmail = (form.email ?? '').trim().toLowerCase();
+    const normalizedAvatarUrl = (form.avatarUrl ?? '').trim();
+    const normalizedSchoolLogoUrl = (form.schoolLogoUrl ?? '').trim();
+
+    if (!(form.fullName ?? '').trim()) nextErrors.fullName = 'Name is required.';
+
+    if (!normalizedEmail) {
+      nextErrors.email = 'Email is required.';
+    } else if (!EMAIL_REGEX.test(normalizedEmail)) {
+      nextErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (normalizedAvatarUrl && !isValidHttpUrl(normalizedAvatarUrl)) {
+      nextErrors.avatarUrl = 'Profile picture URL must be a valid http(s) URL.';
+    }
+
+    const password = (form.password ?? '').trim();
+    if (password) {
+      const strong = password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
+      if (!strong) nextErrors.password = 'Use at least 8 characters with uppercase, lowercase, and a number.';
+    }
+
+    if (role === 'school_rep' && normalizedSchoolLogoUrl && !isValidHttpUrl(normalizedSchoolLogoUrl)) {
+      nextErrors.schoolLogoUrl = 'School logo URL must be a valid http(s) URL.';
+    }
+
+    return { nextErrors, normalizedEmail, normalizedAvatarUrl, normalizedSchoolLogoUrl };
+  };
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+
+    const { nextErrors, normalizedEmail, normalizedAvatarUrl, normalizedSchoolLogoUrl } = validate();
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      setMessage('Please fix the highlighted fields.');
+      focusFirstInvalid(nextErrors);
+      return;
+    }
+
     setSaving(true);
     setMessage('');
+    setErrors({});
+
+    const payload = {
+      ...form,
+      fullName: (form.fullName ?? '').trim(),
+      description: (form.description ?? '').trim(),
+      address: (form.address ?? '').trim(),
+      schoolName: (form.schoolName ?? '').trim(),
+      schoolDescription: (form.schoolDescription ?? '').trim(),
+      schoolAddress: (form.schoolAddress ?? '').trim(),
+      email: normalizedEmail,
+      avatarUrl: normalizedAvatarUrl,
+      schoolLogoUrl: normalizedSchoolLogoUrl,
+      password: (form.password ?? '').trim(),
+    };
 
     const res = await fetch('/server/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
 
     const data = (await res.json()) as { error?: string };
     if (!res.ok) {
-      setMessage(data.error ?? 'Failed to save settings.');
+      setMessage(mapProfileServerError(res.status, data.error));
       setSaving(false);
       return;
     }
 
     setMessage('Settings updated successfully.');
-    setForm((prev) => ({ ...prev, password: '' }));
+    setForm((prev) => ({ ...prev, ...payload, password: '' }));
     setSaving(false);
   };
 
@@ -88,10 +178,11 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-semibold text-slate-900">Account Settings</h1>
         <p className="mb-6 text-sm text-slate-600">Update your profile and security information.</p>
 
-        <form className="space-y-5" onSubmit={onSubmit}>
-          <label className="block text-sm font-medium text-slate-700">
+        <form className="space-y-5" onSubmit={onSubmit} noValidate>
+          <label className="block text-sm font-medium text-slate-700" htmlFor="fullName">
             Name
-            <input className="mt-1 w-full rounded border border-slate-300 p-2" value={form.fullName ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))} />
+            <input id="fullName" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.fullName ?? ''} onChange={(e) => { setForm((prev) => ({ ...prev, fullName: e.target.value })); setErrors((prev) => ({ ...prev, fullName: undefined })); }} aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'fullName-error' : undefined} />
+            {errors.fullName && <p id="fullName-error" role="alert" className="mt-1 text-xs text-red-700">{errors.fullName}</p>}
           </label>
 
           <label className="block text-sm font-medium text-slate-700">
@@ -104,9 +195,10 @@ export default function SettingsPage() {
             <input className="mt-1 w-full rounded border border-slate-300 p-2" value={form.address ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-slate-700" htmlFor="avatarUrl">
             Profile picture URL
-            <input className="mt-1 w-full rounded border border-slate-300 p-2" value={form.avatarUrl ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, avatarUrl: e.target.value }))} />
+            <input id="avatarUrl" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.avatarUrl ?? ''} onChange={(e) => { setForm((prev) => ({ ...prev, avatarUrl: e.target.value })); setErrors((prev) => ({ ...prev, avatarUrl: undefined })); }} aria-invalid={Boolean(errors.avatarUrl)} aria-describedby={errors.avatarUrl ? 'avatarUrl-error' : undefined} />
+            {errors.avatarUrl && <p id="avatarUrl-error" role="alert" className="mt-1 text-xs text-red-700">{errors.avatarUrl}</p>}
           </label>
 
           {role === 'school_rep' && (
@@ -123,21 +215,24 @@ export default function SettingsPage() {
                 School address
                 <input className="mt-1 w-full rounded border border-slate-300 p-2" value={form.schoolAddress ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, schoolAddress: e.target.value }))} />
               </label>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-slate-700" htmlFor="schoolLogoUrl">
                 School logo URL
-                <input className="mt-1 w-full rounded border border-slate-300 p-2" value={form.schoolLogoUrl ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, schoolLogoUrl: e.target.value }))} />
+                <input id="schoolLogoUrl" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.schoolLogoUrl ?? ''} onChange={(e) => { setForm((prev) => ({ ...prev, schoolLogoUrl: e.target.value })); setErrors((prev) => ({ ...prev, schoolLogoUrl: undefined })); }} aria-invalid={Boolean(errors.schoolLogoUrl)} aria-describedby={errors.schoolLogoUrl ? 'schoolLogoUrl-error' : undefined} />
+                {errors.schoolLogoUrl && <p id="schoolLogoUrl-error" role="alert" className="mt-1 text-xs text-red-700">{errors.schoolLogoUrl}</p>}
               </label>
             </>
           )}
 
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-slate-700" htmlFor="email">
             Email
-            <input type="email" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.email ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
+            <input id="email" type="email" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.email ?? ''} onChange={(e) => { setForm((prev) => ({ ...prev, email: e.target.value })); setErrors((prev) => ({ ...prev, email: undefined })); }} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
+            {errors.email && <p id="email-error" role="alert" className="mt-1 text-xs text-red-700">{errors.email}</p>}
           </label>
 
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-slate-700" htmlFor="password">
             New password
-            <input type="password" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.password ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))} />
+            <input id="password" type="password" className="mt-1 w-full rounded border border-slate-300 p-2" value={form.password ?? ''} onChange={(e) => { setForm((prev) => ({ ...prev, password: e.target.value })); setErrors((prev) => ({ ...prev, password: undefined })); }} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'password-error' : undefined} />
+            {errors.password && <p id="password-error" role="alert" className="mt-1 text-xs text-red-700">{errors.password}</p>}
           </label>
 
           <div className="flex gap-3">
@@ -145,7 +240,8 @@ export default function SettingsPage() {
             <button type="button" onClick={() => router.back()} className="rounded border border-slate-300 px-4 py-2">Back</button>
           </div>
 
-          {message && <p className="text-sm text-slate-700">{message}</p>}
+          {message && <p className="text-sm text-slate-700" role="status">{message}</p>}
+          {errors.form && <p className="text-sm text-red-700" role="alert">{errors.form}</p>}
         </form>
       </div>
     </div>

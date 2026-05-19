@@ -7,6 +7,27 @@ import StudentLogin from './Register/StudentLogin';
 import SchoolRepLogin from './Register/SchoolRepLogin';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
+type SignUpErrors = Partial<Record<'fullName' | 'email' | 'username' | 'password' | 'confirmPassword' | 'form', string>>;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+
+function mapSupabaseSignUpError(message: string) {
+  const lower = message.toLowerCase();
+
+  if (lower.includes('already registered') || lower.includes('already been registered')) {
+    return 'An account with this email already exists. Try signing in instead.';
+  }
+  if (lower.includes('invalid email')) {
+    return 'Please enter a valid email address.';
+  }
+  if (lower.includes('password') && lower.includes('weak')) {
+    return 'Password is too weak. Use at least 8 characters with upper/lowercase letters and a number.';
+  }
+
+  return 'We could not create your account right now. Please try again.';
+}
+
 export default function LandingPage() {
   const router = useRouter();
   const [panelType, setPanelType] = useState<'studentLogin' | 'schoolRepLogin' | 'signup' | null>(null);
@@ -17,7 +38,8 @@ export default function LandingPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<SignUpErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -30,7 +52,7 @@ export default function LandingPage() {
 
   const openPanel = (type: 'studentLogin' | 'schoolRepLogin' | 'signup') => {
     setPanelType(type);
-    setError('');
+    setErrors({});
     setFullName('');
     setEmail('');
     setUsername('');
@@ -38,33 +60,74 @@ export default function LandingPage() {
     setConfirmPassword('');
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setIsSubmitting(false);
+  };
+
+  const focusFirstInvalid = (nextErrors: SignUpErrors) => {
+    const order: Array<keyof SignUpErrors> = ['fullName', 'email', 'username', 'password', 'confirmPassword'];
+    const firstField = order.find((key) => nextErrors[key]);
+    if (!firstField) return;
+    const el = document.getElementById(firstField);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el as HTMLInputElement | null)?.focus();
+  };
+
+  const validateSignUp = () => {
+    const nextErrors: SignUpErrors = {};
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
+
+    if (!fullName.trim()) nextErrors.fullName = 'Full name is required.';
+    if (!normalizedEmail) {
+      nextErrors.email = 'Email is required.';
+    } else if (!EMAIL_REGEX.test(normalizedEmail)) {
+      nextErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (!normalizedUsername) {
+      nextErrors.username = 'Username is required.';
+    } else if (!USERNAME_REGEX.test(normalizedUsername)) {
+      nextErrors.username = 'Username must be 3-20 characters and contain only lowercase letters, numbers, or underscores.';
+    }
+
+    if (!password) {
+      nextErrors.password = 'Password is required.';
+    } else {
+      const strong = password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
+      if (!strong) {
+        nextErrors.password = 'Use at least 8 characters with uppercase, lowercase, and a number.';
+      }
+    }
+
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = 'Please confirm your password.';
+    } else if (password !== confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords do not match.';
+    }
+
+    return { nextErrors, normalizedEmail, normalizedUsername };
   };
 
   const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
-    const normalizedUsername = username.trim().toLowerCase();
-
-    if (!fullName.trim() || !email.trim() || !normalizedUsername || !password.trim()) {
-      setError('Please fill in all required fields.');
+    const { nextErrors, normalizedEmail, normalizedUsername } = validateSignUp();
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      focusFirstInvalid(nextErrors);
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters (Supabase default).');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
+    setIsSubmitting(true);
+    setErrors({});
 
     let supabase;
     try {
       supabase = createSupabaseBrowserClient();
     } catch {
-      setError('Missing Supabase env vars. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local.');
+      setErrors({ form: 'Configuration error: missing Supabase environment variables.' });
+      setIsSubmitting(false);
       return;
     }
 
@@ -73,17 +136,21 @@ export default function LandingPage() {
     });
 
     if (rpcError) {
-      setError('Could not verify username. Run supabase/schema.sql in your Supabase SQL editor.');
+      setErrors({ username: 'We could not verify that username right now. Please try again.' });
+      focusFirstInvalid({ username: 'error' });
+      setIsSubmitting(false);
       return;
     }
 
     if (!available) {
-      setError('That username is already taken.');
+      setErrors({ username: 'That username is already taken.' });
+      focusFirstInvalid({ username: 'error' });
+      setIsSubmitting(false);
       return;
     }
 
     const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
+      email: normalizedEmail,
       password,
       options: {
         data: {
@@ -94,12 +161,13 @@ export default function LandingPage() {
     });
 
     if (error) {
-      setError(error.message);
+      setErrors({ form: mapSupabaseSignUpError(error.message) });
+      setIsSubmitting(false);
       return;
     }
 
     if (data.session) {
-      setError('');
+      setErrors({});
       setFullName('');
       setEmail('');
       setUsername('');
@@ -108,11 +176,13 @@ export default function LandingPage() {
       setShowPassword(false);
       setShowConfirmPassword(false);
       setPanelType(null);
+      setIsSubmitting(false);
       router.push('/StudentDashboard');
       return;
     }
 
-    setError('Account created. If Supabase requires email confirmation, check your inbox before signing in.');
+    setErrors({ form: 'Account created. Please check your inbox to confirm your email before signing in.' });
+    setIsSubmitting(false);
   };
 
   return (
@@ -170,100 +240,47 @@ export default function LandingPage() {
                   <p className="login-panel__subtitle">Create a student account</p>
                 </div>
 
-                <form className="login-panel__form" onSubmit={handleSignUp}>
+                <form className="login-panel__form" onSubmit={handleSignUp} noValidate>
                   <div className="form-field">
                     <label htmlFor="fullName">Full Name</label>
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => {
-                        setFullName(e.target.value);
-                        setError('');
-                      }}
-                      placeholder="Enter your full name"
-                    />
+                    <input id="fullName" name="fullName" type="text" value={fullName} onChange={(e) => { setFullName(e.target.value); setErrors((prev) => ({ ...prev, fullName: undefined, form: undefined })); }} placeholder="Enter your full name" aria-invalid={Boolean(errors.fullName)} aria-describedby={errors.fullName ? 'fullName-error' : undefined} />
+                    {errors.fullName && <p id="fullName-error" role="alert" className="alert">{errors.fullName}</p>}
                   </div>
 
                   <div className="form-field">
                     <label htmlFor="email">Email</label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setError('');
-                      }}
-                      placeholder="Enter your email"
-                    />
+                    <input id="email" name="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setErrors((prev) => ({ ...prev, email: undefined, form: undefined })); }} placeholder="Enter your email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} />
+                    {errors.email && <p id="email-error" role="alert" className="alert">{errors.email}</p>}
                   </div>
 
                   <div className="form-field">
                     <label htmlFor="username">Username</label>
-                    <input
-                      id="username"
-                      name="username"
-                      value={username}
-                      onChange={(e) => {
-                        setUsername(e.target.value);
-                        setError('');
-                      }}
-                      type="text"
-                      placeholder="Enter your username"
-                    />
+                    <input id="username" name="username" value={username} onChange={(e) => { setUsername(e.target.value); setErrors((prev) => ({ ...prev, username: undefined, form: undefined })); }} type="text" placeholder="Enter your username" aria-invalid={Boolean(errors.username)} aria-describedby={errors.username ? 'username-error' : undefined} />
+                    {errors.username && <p id="username-error" role="alert" className="alert">{errors.username}</p>}
                   </div>
 
                   <div className="form-field password-field">
                     <label htmlFor="password">Password</label>
-                    <input
-                      id="password"
-                      name="password"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        setError('');
-                      }}
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Create a password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                    >
+                    <input id="password" name="password" value={password} onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: undefined, confirmPassword: undefined, form: undefined })); }} type={showPassword ? 'text' : 'password'} placeholder="Create a password" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'password-error' : undefined} />
+                    <button type="button" className="password-toggle" onClick={() => setShowPassword((prev) => !prev)}>
                       {showPassword ? 'Hide' : 'Show'}
                     </button>
+                    {errors.password && <p id="password-error" role="alert" className="alert">{errors.password}</p>}
                   </div>
 
                   <div className="form-field password-field">
                     <label htmlFor="confirmPassword">Confirm Password</label>
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => {
-                        setConfirmPassword(e.target.value);
-                        setError('');
-                      }}
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm your password"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    >
+                    <input id="confirmPassword" name="confirmPassword" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setErrors((prev) => ({ ...prev, confirmPassword: undefined, form: undefined })); }} type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm your password" aria-invalid={Boolean(errors.confirmPassword)} aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined} />
+                    <button type="button" className="password-toggle" onClick={() => setShowConfirmPassword((prev) => !prev)}>
                       {showConfirmPassword ? 'Hide' : 'Show'}
                     </button>
+                    {errors.confirmPassword && <p id="confirmPassword-error" role="alert" className="alert">{errors.confirmPassword}</p>}
                   </div>
 
-                  {error && <div className="alert">{error}</div>}
+                  {errors.form && <div className="alert" role="alert">{errors.form}</div>}
 
-                  <button type="submit" className="login-panel__submit">
-                    Create account
+                  <button type="submit" className="login-panel__submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Creating account...' : 'Create account'}
                   </button>
 
                   <p className="login-panel__footer">
