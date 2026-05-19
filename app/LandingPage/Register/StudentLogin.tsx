@@ -50,10 +50,11 @@ export default function StudentLogin({ onSwitchToSignUp }: StudentLoginProps) {
     if (profile.role !== 'student') {
       await supabase.auth.signOut();
       if (profile.role === 'admin') {
-        setError('Administrators sign in at /admin-login (not the student portal).');
-      } else {
-        setError('This portal is for student accounts only. Use School Rep login for rep access.');
+        router.push('/admin');
+        return;
       }
+
+      setError('This portal is for student accounts only. Use School Rep login for rep access.');
       return;
     }
 

@@ -49,10 +49,11 @@ export default function SchoolRepLogin({ onSwitchToSignUp }: SchoolRepLoginProps
     if (profile.role !== 'school_rep') {
       await supabase.auth.signOut();
       if (profile.role === 'admin') {
-        setError('Administrators sign in at /admin-login.');
-      } else {
-        setError('This portal is for school representatives only. Use Student login for student access.');
+        router.push('/admin');
+        return;
       }
+
+      setError('This portal is for school representatives only. Use Student login for student access.');
       return;
     }
 

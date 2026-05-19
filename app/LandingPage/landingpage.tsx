@@ -1,7 +1,6 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import './landingpage.css';
 import StudentLogin from './Register/StudentLogin';
@@ -152,9 +151,6 @@ export default function LandingPage() {
               Sign Up
             </button>
           </div>
-          <p className="hero__admin-link">
-            <Link href="/admin-login">Administrator sign in</Link>
-          </p>
         </div>
       </section>
 
