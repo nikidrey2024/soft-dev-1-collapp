@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import './landingpage.css';
 import StudentLogin from './Register/StudentLogin';
@@ -188,6 +189,15 @@ export default function LandingPage() {
   return (
     <main className="landing-page">
       <section className={`hero ${showPanel ? 'hero--compact' : ''}`}>
+        <Image
+          className="hero__image"
+          src="/images/landing-hero.svg"
+          alt=""
+          aria-hidden="true"
+          fill
+          priority
+          sizes="100vw"
+        />
         <div className="hero__content">
           <p className="hero__eyebrow">COLLAPP</p>
           <h1 className="hero__heading">
@@ -201,21 +211,21 @@ export default function LandingPage() {
           <div className="hero__actions">
             <button
               type="button"
-              className={`button ${panelType === 'studentLogin' ? 'button--primary' : 'button--secondary'}`}
+              className={`ui-button ${panelType === 'studentLogin' ? 'ui-button--primary' : 'ui-button--secondary'}`}
               onClick={() => openPanel('studentLogin')}
             >
               Student Login
             </button>
             <button
               type="button"
-              className={`button ${panelType === 'schoolRepLogin' ? 'button--primary' : 'button--secondary'}`}
+              className={`ui-button ${panelType === 'schoolRepLogin' ? 'ui-button--primary' : 'ui-button--secondary'}`}
               onClick={() => openPanel('schoolRepLogin')}
             >
               School Rep Login
             </button>
             <button
               type="button"
-              className={`button ${panelType === 'signup' ? 'button--primary' : 'button--secondary'}`}
+              className={`ui-button ${panelType === 'signup' ? 'ui-button--primary' : 'ui-button--secondary'}`}
               onClick={() => openPanel('signup')}
             >
               Sign Up

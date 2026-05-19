@@ -174,7 +174,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10">
-      <div className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mx-auto max-w-3xl rounded-[var(--radius-lg)] border border-slate-200 bg-white p-6 shadow-[var(--shadow-card)]">
         <h1 className="text-2xl font-semibold text-slate-900">Account Settings</h1>
         <p className="mb-6 text-sm text-slate-600">Update your profile and security information.</p>
 
@@ -236,8 +236,8 @@ export default function SettingsPage() {
           </label>
 
           <div className="flex gap-3">
-            <button type="submit" disabled={saving} className="rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50">{saving ? 'Saving...' : 'Save changes'}</button>
-            <button type="button" onClick={() => router.back()} className="rounded border border-slate-300 px-4 py-2">Back</button>
+            <button type="submit" disabled={saving} className="ui-button ui-button--primary disabled:opacity-50">{saving ? 'Saving...' : 'Save changes'}</button>
+            <button type="button" onClick={() => router.back()} className="ui-button border border-slate-300 bg-white text-slate-900">Back</button>
           </div>
 
           {message && <p className="text-sm text-slate-700" role="status">{message}</p>}
