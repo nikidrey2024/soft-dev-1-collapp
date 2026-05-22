@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "COLLAPP",
-  description: "Streamline your college journey from application to acceptance.",
+  description: ">Where your journey meets success.",
 };
 
 type RootLayoutProps = {

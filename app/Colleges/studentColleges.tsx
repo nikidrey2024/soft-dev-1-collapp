@@ -202,11 +202,42 @@ export default function StudentColleges() {
     try {
       setApplySubmittingId(college.id);
 
+      // Upload files to Supabase Storage and collect {name, url} pairs
+      let supabase;
+      try {
+        supabase = createSupabaseBrowserClient();
+      } catch {
+        alert('App is missing Supabase configuration.');
+        setApplySubmittingId(null);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id ?? 'unknown';
+
+      const uploadedDocuments: { name: string; url: string | null }[] = [];
+      for (const file of selectedFiles) {
+        const filePath = `applications/${userId}/${college.id}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+          // If storage isn't set up, fall back to name-only
+          uploadedDocuments.push({ name: file.name, url: null });
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('documents')
+            .getPublicUrl(filePath);
+          uploadedDocuments.push({ name: file.name, url: urlData?.publicUrl ?? null });
+        }
+      }
+
       const applicationData = {
         collegeId: college.id,
         collegeName: college.name,
         program: college.program || college.description || 'General Application',
-        documents: selectedFiles.map((file) => file.name),
+        documents: uploadedDocuments,
       };
 
       const response = await fetch('/server/applications', {

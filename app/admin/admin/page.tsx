@@ -87,8 +87,7 @@ export default function AdminCreateSchoolRepPage() {
       <div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
         <h1 className="text-3xl font-semibold text-slate-950">Create school rep dashboard accounts</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Use this as an admin when a university wants to collaborate (e.g., La Salle University). You can assign the
-          login email and temporary password for their school rep dashboard account.
+          You can assign the login email and temporary password for their school rep dashboard account.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 grid gap-4 sm:grid-cols-2">

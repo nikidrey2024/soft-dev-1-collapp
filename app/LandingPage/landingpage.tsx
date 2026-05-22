@@ -211,26 +211,27 @@ export default function LandingPage() {
           <div className="hero__actions">
             <button
               type="button"
-              className={`ui-button ${panelType === 'studentLogin' ? 'ui-button--primary' : 'ui-button--secondary'}`}
+              className={`ui-button ${panelType === 'studentLogin' ? 'ui-button--primary' : 'ui-button--ghost'}`}
               onClick={() => openPanel('studentLogin')}
             >
               Student Login
             </button>
             <button
               type="button"
-              className={`ui-button ${panelType === 'schoolRepLogin' ? 'ui-button--primary' : 'ui-button--secondary'}`}
+              className={`ui-button ${panelType === 'schoolRepLogin' ? 'ui-button--primary' : 'ui-button--ghost'}`}
               onClick={() => openPanel('schoolRepLogin')}
             >
               School Rep Login
             </button>
             <button
               type="button"
-              className={`ui-button ${panelType === 'signup' ? 'ui-button--primary' : 'ui-button--secondary'}`}
+              className={`ui-button ${panelType === 'signup' ? 'ui-button--primary' : 'ui-button--ghost'}`}
               onClick={() => openPanel('signup')}
             >
               Sign Up
             </button>
           </div>
+
         </div>
       </section>
 
