@@ -51,6 +51,16 @@ export default function StudentDashboard() {
   const [studentName, setStudentName] = useState('Student');
   const [avatarLetters, setAvatarLetters] = useState('S');
   const [sessionReady, setSessionReady] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileData, setProfileData] = useState({
+    username: '',
+    description: '',
+    status: 'Active Student',
+  });
+  const [bioDraft, setBioDraft] = useState('');
+  const [editingBio, setEditingBio] = useState(false);
+  const [profileMessage, setProfileMessage] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,6 +112,9 @@ export default function StudentDashboard() {
         const profile = (await profileRes.json()) as {
           role: string;
           fullName: string;
+          username?: string;
+          description?: string;
+          status?: string;
         };
         if (profile.role !== 'student') {
           router.replace('/');
@@ -116,6 +129,12 @@ export default function StudentDashboard() {
             ? `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase()
             : name.slice(0, 2).toUpperCase()
         );
+        setProfileData({
+          username: profile.username ?? '',
+          description: profile.description ?? '',
+          status: profile.status ?? 'Active Student',
+        });
+        setBioDraft(profile.description ?? '');
         setSessionReady(true);
       } catch {
         router.replace('/');
@@ -241,6 +260,26 @@ export default function StudentDashboard() {
     setSelectedApplicationId(id);
   };
 
+  const saveBio = async () => {
+    if (profileSaving) return;
+    setProfileSaving(true);
+    setProfileMessage('');
+    const res = await fetch('/server/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: bioDraft.trim() }),
+    });
+    if (!res.ok) {
+      setProfileMessage('Failed to save bio. Please try again.');
+      setProfileSaving(false);
+      return;
+    }
+    setProfileData((prev) => ({ ...prev, description: bioDraft.trim() }));
+    setProfileMessage('Bio saved.');
+    setEditingBio(false);
+    setProfileSaving(false);
+  };
+
   const handleStatClick = (stat: ApplicationStats) => {
     if (stat.title === 'AVAILABLE COLLEGES') {
       router.push('/Colleges');
@@ -349,6 +388,10 @@ export default function StudentDashboard() {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 animate-in fade-in duration-200">
                   <button
                     onClick={() => {
+                      setProfileModalOpen(true);
+                      setEditingBio(false);
+                      setProfileMessage('');
+                      setBioDraft(profileData.description);
                       router.push('/settings');
                       setProfileDropdownOpen(false);
                     }}
@@ -715,6 +758,61 @@ export default function StudentDashboard() {
         </div>
       )}
 
+      {profileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">Student Profile</h3>
+              <button onClick={() => setProfileModalOpen(false)} className="text-sm text-gray-600 hover:text-gray-900">Close</button>
+            </div>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-lg border border-gray-200 p-3">
+                <p className="text-xs text-gray-500">Username</p>
+                <p className="text-sm font-semibold text-gray-900">{profileData.username || '-'}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-3">
+                <p className="text-xs text-gray-500">Description</p>
+                <p className="text-sm text-gray-900">Student account profile</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-3">
+                <p className="text-xs text-gray-500">Status</p>
+                <p className="text-sm font-semibold text-gray-900">{profileData.status}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500">Bio</p>
+                  {!editingBio && (
+                    <button className="text-xs font-semibold text-blue-700 hover:text-blue-900" onClick={() => setEditingBio(true)}>
+                      Edit Profile
+                    </button>
+                  )}
+                </div>
+                {editingBio ? (
+                  <div className="mt-2">
+                    <textarea
+                      className="w-full rounded border border-gray-300 p-2 text-sm"
+                      rows={4}
+                      value={bioDraft}
+                      onChange={(e) => setBioDraft(e.target.value)}
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <button onClick={saveBio} disabled={profileSaving} className="rounded bg-black px-3 py-1 text-xs font-semibold text-white disabled:opacity-60">
+                        {profileSaving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button onClick={() => { setEditingBio(false); setBioDraft(profileData.description); }} className="rounded border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{profileData.description || 'No bio yet.'}</p>
+                )}
+              </div>
+            </div>
+            {profileMessage && <p className="mt-3 text-sm text-gray-700">{profileMessage}</p>}
+          </div>
+        </div>
+      )}
       {/* Application Detail Modal */}
       {selectedApplicationId !== null && (() => {
         const app = applications.find((a) => a.id === selectedApplicationId);

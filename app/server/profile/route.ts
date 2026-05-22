@@ -39,6 +39,7 @@ export async function GET() {
         username,
         full_name,
         role,
+        description,
         college_id,
         colleges ( id, name, description, location )
       `
@@ -59,6 +60,7 @@ export async function GET() {
       username: string;
       full_name: string;
       role: string;
+      description: string;
       college_id: number | null;
       colleges?: CollegeEmbed;
     };
@@ -70,9 +72,10 @@ export async function GET() {
       username: row.username,
       fullName: row.full_name,
       role: row.role,
+      status: row.role === 'student' ? 'Active Student' : row.role === 'school_rep' ? 'Active School Representative' : 'Active Admin',
       collegeId: row.college_id,
       collegeName: college?.name ?? null,
-      description: '',
+      description: row.description ?? '',
       address: '',
       avatarUrl: null,
       collegeDescription: college?.description ?? '',
