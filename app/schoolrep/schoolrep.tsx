@@ -70,6 +70,7 @@ export default function SchoolRepPage() {
   const [error, setError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [repCollegeName, setRepCollegeName] = useState<string | null>(null);
+  const [repCollegeId, setRepCollegeId] = useState<number | null>(null);
   const [reviewComment, setReviewComment] = useState('');
   const [selectedDocumentUrl, setSelectedDocumentUrl] = useState<string | null>(null);
 
@@ -181,6 +182,7 @@ export default function SchoolRepPage() {
         }
 
         setRepCollegeName(profile.collegeName);
+        setRepCollegeId(profile.collegeId);
         setAuthReady(true);
       } catch {
         router.replace('/');
@@ -248,6 +250,11 @@ export default function SchoolRepPage() {
   const toggleCollegeAvailability = async (id: number) => {
     const college = colleges.find((item) => item.id === id);
     if (!college) return;
+
+    if (repCollegeId !== null && college.id !== repCollegeId) {
+      alert('You can only change availability for your own school.');
+      return;
+    }
 
     const updatedCollege: College = {
       ...college,
@@ -476,7 +483,13 @@ export default function SchoolRepPage() {
           <div className="flex gap-2">
             <button
               onClick={() => toggleCollegeAvailability(college.id)}
-              className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900 transition"
+              disabled={repCollegeId !== null && college.id !== repCollegeId}
+              title={repCollegeId !== null && college.id !== repCollegeId ? 'You can only change availability for your own school' : undefined}
+              className={`rounded-lg px-3 py-2 text-xs font-semibold text-white transition ${
+                repCollegeId !== null && college.id !== repCollegeId
+                  ? 'bg-slate-300 cursor-not-allowed'
+                  : 'bg-slate-800 hover:bg-slate-900'
+              }`}
             >
               {college.status === 'Available' ? 'Mark Unavailable' : 'Mark Available'}
             </button>
@@ -527,7 +540,7 @@ export default function SchoolRepPage() {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
                   <button
                     onClick={() => {
-                      alert('Viewing profile...');
+                      router.push('/settings');
                       setProfileDropdownOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-100 transition text-left"

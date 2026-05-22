@@ -183,6 +183,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'College not found' }, { status: 404 });
     }
 
+    // Check if requester is a school_rep and only allow editing their own college
+    const { data: requesterProfile } = await supabase
+      .from('profiles')
+      .select('role, college_id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (requesterProfile?.role === 'school_rep' && requesterProfile.college_id !== parseInt(id, 10)) {
+      return NextResponse.json({ error: 'You can only update your own school.' }, { status: 403 });
+    }
+
     const prev = existing as CollegeRow;
     const normalizedRequirements = Array.isArray(body.requirements)
       ? body.requirements

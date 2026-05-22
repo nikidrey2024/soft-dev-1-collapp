@@ -223,6 +223,19 @@ export default function StudentDashboard() {
     }
   };
 
+  const [retractConfirmId, setRetractConfirmId] = useState<number | null>(null);
+
+  const handleRetractApplication = async (id: number) => {
+    try {
+      const response = await fetch(`/server/applications?id=${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to retract application');
+      setApplications((prev) => prev.filter((app) => app.id !== id));
+      setRetractConfirmId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not retract application');
+    }
+  };
+
   const handleApplicationClick = (id: number) => {
     alert(`Application ${id} - More details opening soon!`);
   };
@@ -335,7 +348,7 @@ export default function StudentDashboard() {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 animate-in fade-in duration-200">
                   <button
                     onClick={() => {
-                      alert('Viewing profile...');
+                      router.push('/settings');
                       setProfileDropdownOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 transition-all duration-200 text-left"
@@ -477,10 +490,9 @@ export default function StudentDashboard() {
               onCta: () => router.push("/Colleges"),
             })
           ) : applications.map((app) => (
-            <button
+            <div
               key={app.id}
-              onClick={() => handleApplicationClick(app.id)}
-              className="w-full bg-gray-100 hover:bg-gray-200 rounded-xl p-4 flex items-center justify-between transition-all duration-200 transform hover:scale-105 active:scale-95 text-left border border-gray-200 hover:border-gray-300"
+              className="w-full bg-gray-100 rounded-xl p-4 flex items-center justify-between border border-gray-200"
             >
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">
@@ -491,14 +503,40 @@ export default function StudentDashboard() {
                   Applied: {new Date(app.appliedDate).toLocaleDateString()}
                 </p>
               </div>
-              <span
-                className={`${getStatusBadgeColor(
-                  app.status
-                )} px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ml-4`}
-              >
-                {app.status}
-              </span>
-            </button>
+              <div className="flex items-center gap-3 ml-4">
+                <span
+                  className={`${getStatusBadgeColor(app.status)} px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap`}
+                >
+                  {app.status}
+                </span>
+                {(app.status === 'Pending' || app.status === 'Under Review') && (
+                  retractConfirmId === app.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-600">Retract?</span>
+                      <button
+                        onClick={() => handleRetractApplication(app.id)}
+                        className="text-xs bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setRetractConfirmId(null)}
+                        className="text-xs bg-gray-300 text-gray-800 px-2 py-1 rounded-lg hover:bg-gray-400 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setRetractConfirmId(app.id)}
+                      className="text-xs text-red-600 border border-red-300 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+                    >
+                      Retract
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
           ))}
         </div>
 

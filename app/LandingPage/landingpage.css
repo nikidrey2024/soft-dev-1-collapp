@@ -96,8 +96,19 @@
 }
 
 .hero .ui-button--primary {
-  background: var(--surface);
-  color: var(--color-brand-800);
+  background: #ffffff;
+  color: #111827;
+}
+
+.hero .ui-button--ghost {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  color: #ffffff;
+}
+
+.hero .ui-button--ghost:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ffffff;
 }
 
 .login-panel {
