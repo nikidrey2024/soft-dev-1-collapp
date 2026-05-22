@@ -58,7 +58,7 @@ export default function SettingsPage() {
       }
 
       const data = (await res.json()) as ProfileData;
-      if (data.role !== 'student' && data.role !== 'school_rep') {
+      if (data.role !== 'student' && data.role !== 'school_rep' && data.role !== 'admin') {
         router.replace('/');
         return;
       }

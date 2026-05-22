@@ -24,6 +24,18 @@ function normalizeDocuments(input: unknown) {
   return input
     .map((item) => {
       if (typeof item === 'string') {
+        // Try to parse stringified JSON objects like '{"name":"file.jpg","url":null}'
+        if (item.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(item) as { name?: unknown; url?: unknown };
+            const name = typeof parsed.name === 'string' ? parsed.name : '';
+            if (!name) return null;
+            const url = typeof parsed.url === 'string' ? parsed.url : null;
+            return { name, url };
+          } catch {
+            // fall through to treat as plain filename
+          }
+        }
         return { name: item, url: null as string | null };
       }
 

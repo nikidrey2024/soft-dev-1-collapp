@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -10,6 +10,31 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [checking, setChecking] = useState(true);
+
+  // Auto-redirect if already logged in as admin
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const res = await fetch('/server/profile');
+          if (res.ok) {
+            const profile = (await res.json()) as { role: string };
+            if (profile.role === 'admin') {
+              router.replace('/admin');
+              return;
+            }
+          }
+        }
+      } catch {
+        // not logged in, show the form
+      }
+      setChecking(false);
+    };
+    checkSession();
+  }, [router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -49,6 +74,14 @@ export default function AdminLoginPage() {
 
     router.replace('/admin');
   };
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
+        Checking session…
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-16 text-white">

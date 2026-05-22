@@ -936,6 +936,14 @@ export default function SchoolRepPage() {
             {selectedDocumentUrl && (
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm text-slate-600">Document preview</p>
+                <a
+                  href={selectedDocumentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-xs text-blue-600 underline"
+                >
+                  Open in new tab ↗
+                </a>
                 <iframe
                   title="Applicant document preview"
                   src={selectedDocumentUrl}

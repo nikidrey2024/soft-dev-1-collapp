@@ -231,9 +231,7 @@ export default function LandingPage() {
               Sign Up
             </button>
           </div>
-          <p className="hero__admin-link">
-            Are you an admin? <a href="/admin-login">Admin Login</a>
-          </p>
+
         </div>
       </section>
 

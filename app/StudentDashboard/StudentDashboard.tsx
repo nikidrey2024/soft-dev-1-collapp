@@ -224,6 +224,7 @@ export default function StudentDashboard() {
   };
 
   const [retractConfirmId, setRetractConfirmId] = useState<number | null>(null);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<number | null>(null);
 
   const handleRetractApplication = async (id: number) => {
     try {
@@ -237,7 +238,7 @@ export default function StudentDashboard() {
   };
 
   const handleApplicationClick = (id: number) => {
-    alert(`Application ${id} - More details opening soon!`);
+    setSelectedApplicationId(id);
   };
 
   const handleStatClick = (stat: ApplicationStats) => {
@@ -492,7 +493,8 @@ export default function StudentDashboard() {
           ) : applications.map((app) => (
             <div
               key={app.id}
-              className="w-full bg-gray-100 rounded-xl p-4 flex items-center justify-between border border-gray-200"
+              onClick={() => handleApplicationClick(app.id)}
+              className="w-full bg-gray-100 rounded-xl p-4 flex items-center justify-between border border-gray-200 cursor-pointer hover:border-gray-300 hover:shadow-sm transition"
             >
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">
@@ -511,16 +513,16 @@ export default function StudentDashboard() {
                 </span>
                 {(app.status === 'Pending' || app.status === 'Under Review') && (
                   retractConfirmId === app.id ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <span className="text-xs text-gray-600">Retract?</span>
                       <button
-                        onClick={() => handleRetractApplication(app.id)}
+                        onClick={(e) => { e.stopPropagation(); handleRetractApplication(app.id); }}
                         className="text-xs bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700 transition-colors"
                       >
                         Yes
                       </button>
                       <button
-                        onClick={() => setRetractConfirmId(null)}
+                        onClick={(e) => { e.stopPropagation(); setRetractConfirmId(null); }}
                         className="text-xs bg-gray-300 text-gray-800 px-2 py-1 rounded-lg hover:bg-gray-400 transition-colors"
                       >
                         No
@@ -528,7 +530,7 @@ export default function StudentDashboard() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => setRetractConfirmId(app.id)}
+                      onClick={(e) => { e.stopPropagation(); setRetractConfirmId(app.id); }}
                       className="text-xs text-red-600 border border-red-300 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
                     >
                       Retract
@@ -712,6 +714,75 @@ export default function StudentDashboard() {
           </div>
         </div>
       )}
+
+      {/* Application Detail Modal */}
+      {selectedApplicationId !== null && (() => {
+        const app = applications.find((a) => a.id === selectedApplicationId);
+        if (!app) return null;
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setSelectedApplicationId(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Application details</p>
+                  <h3 className="mt-1 text-xl font-semibold text-slate-900">{app.collegeName}</h3>
+                </div>
+                <button
+                  onClick={() => setSelectedApplicationId(null)}
+                  className="rounded-full px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Program</p>
+                  <p className="mt-1 font-semibold text-slate-900">{app.program}</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Status</p>
+                  <span
+                    className={`mt-2 inline-block ${getStatusBadgeColor(app.status)} px-3 py-1 rounded-full text-sm font-semibold`}
+                  >
+                    {app.status}
+                  </span>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Date applied</p>
+                  <p className="mt-1 text-sm text-slate-700">{new Date(app.appliedDate).toLocaleDateString()}</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Feedback from school representative</p>
+                  {app.notes ? (
+                    <p className="mt-2 text-sm text-slate-800 whitespace-pre-wrap">{app.notes}</p>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-400 italic">No feedback yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <button
+                  onClick={() => setSelectedApplicationId(null)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
